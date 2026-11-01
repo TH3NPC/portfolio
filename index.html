@@ -308,14 +308,40 @@
     background: rgba(0, 255, 194, 0.05);
   }
 
+  .rail-hint {
+    display: flex; align-items: center; gap: 0.8rem;
+    font-size: 0.62rem; text-transform: uppercase; letter-spacing: 0.2em;
+    color: var(--ink-dim); margin-bottom: 1.4rem;
+  }
+  .rail-hint::after { content: ''; flex: 1; height: 1px; background: var(--line); }
+  .rail-hint.hidden { visibility: hidden; }
+
+  /* two rows, scrolls sideways */
   .projects-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+    grid-auto-flow: column;
+    grid-template-rows: repeat(2, auto);
+    grid-auto-columns: 340px;
     gap: 2rem;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scroll-snap-type: x proximity;
+    padding-bottom: 1.6rem;
+    scrollbar-width: thin;
+    scrollbar-color: var(--accent) var(--line);
   }
+  .projects-grid.dragging { scroll-snap-type: none; }
+  .projects-grid.dragging .project-card { pointer-events: none; }
+  .projects-grid::-webkit-scrollbar { height: 6px; }
+  .projects-grid::-webkit-scrollbar-track { background: var(--line); }
+  .projects-grid::-webkit-scrollbar-thumb { background: var(--accent); border-radius: 100px; }
+  .projects-grid.is-empty { display: block; overflow: visible; }
   .project-card {
     background: rgba(17, 19, 26, 0.6);
     border: 1px solid var(--line);
+    scroll-snap-align: start;
+    display: flex;
+    flex-direction: column;
     overflow: hidden;
     transition: all 0.4s cubic-bezier(0.2, 0.8, 0.2, 1);
     position: relative;
@@ -365,7 +391,7 @@
     backdrop-filter: blur(8px);
     border: 1px solid var(--line-strong);
   }
-  .project-body { padding: 1.8rem; }
+  .project-body { padding: 1.8rem; flex: 1; display: flex; flex-direction: column; }
   .project-title {
     font-family: 'Anton', sans-serif;
     font-size: 1.6rem;
@@ -387,7 +413,29 @@
     line-height: 1.65;
     color: var(--ink-dim);
     margin-bottom: 1.2rem;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
   }
+  .project-tags { margin-top: auto; }
+  .project-live-badge {
+    position: absolute; bottom: 1rem; right: 1rem;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.6rem; text-transform: uppercase; letter-spacing: 0.15em;
+    color: var(--accent);
+    background: rgba(10, 11, 15, 0.75);
+    border: 1px solid var(--accent);
+    border-radius: 100px;
+    padding: 0.25rem 0.6rem;
+    backdrop-filter: blur(8px);
+  }
+  .project-more {
+    font-size: 0.6rem; text-transform: uppercase; letter-spacing: 0.2em;
+    color: var(--accent); opacity: 0; margin-top: 1rem;
+    transition: opacity 0.3s;
+  }
+  .project-card:hover .project-more { opacity: 1; }
   .project-tags { display: flex; flex-wrap: wrap; gap: 0.4rem; }
   .project-tag {
     font-size: 0.65rem;
@@ -409,12 +457,82 @@
     backdrop-filter: blur(8px);
   }
   .projects-empty {
-    grid-column: 1 / -1;
     text-align: center;
     padding: 4rem 2rem;
     border: 1px dashed var(--line-strong);
     color: var(--ink-dim);
   }
+  /* project detail modal */
+  .pmodal {
+    position: fixed; inset: 0; z-index: 500;
+    display: none; align-items: center; justify-content: center;
+    padding: 2rem;
+    background: rgba(5, 6, 9, 0.9);
+    backdrop-filter: blur(10px);
+  }
+  .pmodal.open { display: flex; }
+  body.modal-open { overflow: hidden; }
+  .pmodal-box {
+    position: relative;
+    width: min(960px, 100%);
+    max-height: 88vh;
+    overflow-y: auto;
+    background: var(--bg-2);
+    border: 1px solid var(--line-strong);
+  }
+  .pmodal-close {
+    position: absolute; top: 0.9rem; right: 0.9rem; z-index: 3;
+    width: 40px; height: 40px;
+    display: flex; align-items: center; justify-content: center;
+    border: 1px solid var(--line-strong);
+    background: rgba(10, 11, 15, 0.85);
+    color: var(--ink);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 1.1rem; line-height: 1;
+    border-radius: 50%;
+    backdrop-filter: blur(8px);
+  }
+  .pmodal-close:hover { border-color: var(--accent-2); color: var(--accent-2); }
+  .pmodal-stage { background: #06070a; }
+  .pmodal-stage img { display: block; width: 100%; max-height: 62vh; object-fit: contain; }
+  .pmodal-thumbs {
+    display: flex; gap: 0.5rem; padding: 0.8rem;
+    overflow-x: auto; background: #06070a;
+    border-top: 1px solid var(--line);
+  }
+  .pmodal-thumbs img {
+    width: 78px; height: 56px; object-fit: cover; flex: none;
+    border: 1px solid var(--line); opacity: 0.45;
+    transition: opacity 0.25s, border-color 0.25s;
+  }
+  .pmodal-thumbs img.active, .pmodal-thumbs img:hover { opacity: 1; border-color: var(--accent); }
+  .pmodal-body { padding: 2.2rem; }
+  .pmodal-title {
+    font-family: 'Anton', sans-serif;
+    font-size: 2.1rem; line-height: 1.05;
+    text-transform: uppercase; letter-spacing: 0.01em;
+  }
+  .pmodal-meta {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.2em;
+    color: var(--ink-dim); margin: 0.7rem 0 1.5rem;
+  }
+  .pmodal-desc {
+    font-size: 0.95rem; line-height: 1.8;
+    color: var(--ink-dim); white-space: pre-line;
+  }
+  .pmodal-tags { margin-top: 1.4rem; }
+  .pmodal-actions { margin-top: 1.9rem; display: flex; gap: 1rem; flex-wrap: wrap; }
+  .btn-live {
+    display: inline-flex; align-items: center; gap: 0.55rem;
+    padding: 0.85rem 1.7rem;
+    border: 1px solid var(--accent);
+    color: var(--accent); text-decoration: none;
+    font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.2em;
+    transition: background 0.3s, color 0.3s;
+  }
+  .btn-live:hover { background: var(--accent); color: var(--bg); }
+
   .projects-empty strong {
     display: block;
     color: var(--ink);
@@ -532,7 +650,13 @@
     .about-grid { grid-template-columns: 1fr; gap: 2.5rem; }
     .stat { padding: 1.3rem; }
     .stat-num { font-size: 2.5rem; }
-    .projects-grid { grid-template-columns: 1fr; gap: 1.5rem; }
+    .projects-grid { grid-auto-columns: 80vw; gap: 1.2rem; }
+    .rail-hint { font-size: 0.56rem; }
+    .pmodal { padding: 0; }
+    .pmodal-box { max-height: 100vh; height: 100%; border: none; }
+    .pmodal-body { padding: 1.6rem; }
+    .pmodal-title { font-size: 1.5rem; }
+    .pmodal-stage img { max-height: 48vh; }
     .awards-grid { grid-template-columns: 1fr; }
     .award { border-right: none; border-bottom: 1px solid var(--line); }
     .award:last-child { border-bottom: none; }
@@ -602,9 +726,8 @@
     </h2>
 
     <p class="hero-tagline">
-      I'm 19. I never finished a CS degree — never started one either. What I have is <strong>years of breaking stuff
-      and figuring out why</strong>. I write firmware at 2am, design PCBs in my notebook, and <em>make things</em>
-      that <span class="scribble">actually work</span>.
+      I'm 20. No CS degree — never started one. Just <strong>years of breaking things and figuring out why</strong>.
+      I write firmware at 2am and <span class="scribble">make things that work</span>.
     </p>
 
     <div class="scroll-indicator">scroll ↓</div>
@@ -617,23 +740,17 @@
     <div class="about-grid">
       <div class="about-text reveal">
         <p>
-          I started messing with electronics at 12. Burned out a few resistors, fried one Arduino,
-          and somewhere along the way it stopped being a hobby. I'm <strong>Yakob</strong> —
-          a software and hardware engineer who doesn't have a degree and isn't waiting for one.
+          I'm <strong>Yakob</strong>, 20, a software and hardware engineer in Addis Ababa.
+          Started frying components at 12 and never stopped. No degree, not waiting for one.
         </p>
         <p>
-          I work both sides of the stack. Firmware on bare-metal MCUs — Arduino, ESP32, PIC,
-          and whatever dev board is on my desk that week. React frontends. Node.js services.
-          Python scripts. C, C++, C#, HTML, CSS, JavaScript, a bit of assembly when the chip asks for it.
-          PCB layouts in KiCad. To me <em>it's all the same thing</em> — different syntax, same logic.
-          If a system can be built, I want to try.
+          I work both ends of the stack — firmware on ESP32, PIC and Arduino, PCB layout in KiCad,
+          React and Node on top, Python to glue it together. Control systems, ERP dashboards,
+          websites, custom hardware. <em>Different syntax, same logic.</em>
         </p>
         <p>
-          I don't chase shipping numbers. I build when someone asks me to. Right now I work locally
-          out of <strong>Ethiopia</strong> — delivering projects on request, not selling products to
-          a marketplace. What I really do is <em>give life to machines</em>. That's the part I'm here for —
-          the moment a thing just <strong>works</strong>. When the LED blinks. When the query is 200x faster.
-          When the drone hovers exactly where it's supposed to.
+          <strong>What I provide:</strong> projects on request. You describe the machine or the
+          system — I deliver it <strong>working</strong>. That's the whole job.
         </p>
         <p class="signature">— Yakob</p>
         <p class="note">currently: Addis Ababa, drinking too much coffee</p>
@@ -646,7 +763,7 @@
             <div class="stat-label">Competition wins</div>
           </div>
           <div class="stat">
-            <div class="stat-num">19</div>
+            <div class="stat-num">20</div>
             <div class="stat-label">Years on this planet</div>
           </div>
           <div class="stat">
@@ -688,6 +805,8 @@
   <section id="work">
     <div class="section-tag reveal">02 — Work</div>
     <h2 class="section-title reveal">stuff I've <span class="italic">actually built.</span></h2>
+
+    <div class="rail-hint reveal">drag or scroll sideways →</div>
 
     <div class="projects-grid reveal" id="projectsGrid">
       <div class="projects-empty">
@@ -755,6 +874,21 @@
   </footer>
 
 </main>
+
+<div class="pmodal" id="pmodal" role="dialog" aria-modal="true" aria-labelledby="pmTitle">
+  <div class="pmodal-box">
+    <button class="pmodal-close" id="pmClose" aria-label="Close">✕</button>
+    <div class="pmodal-stage" id="pmStage"></div>
+    <div class="pmodal-thumbs" id="pmThumbs"></div>
+    <div class="pmodal-body">
+      <div class="pmodal-title" id="pmTitle"></div>
+      <div class="pmodal-meta" id="pmMeta"></div>
+      <div class="pmodal-desc" id="pmDesc"></div>
+      <div class="pmodal-tags project-tags" id="pmTags"></div>
+      <div class="pmodal-actions" id="pmActions"></div>
+    </div>
+  </div>
+</div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script>
@@ -999,22 +1133,44 @@ window.addEventListener('resize', () => {
 });
 
 /* PROJECTS LOADER */
+let PROJECTS = [];
+
+function escapeHtml(s) {
+  return String(s || '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+// only http(s) links become buttons — a project.json link is still data from the bot
+function safeUrl(u) {
+  if (!u) return '';
+  try { const p = new URL(String(u), location.href); return /^https?:$/.test(p.protocol) ? p.href : ''; }
+  catch (e) { return ''; }
+}
+function imagesOf(p) {
+  const list = Array.isArray(p.images) && p.images.length ? p.images : (p.image ? [p.image] : []);
+  return list.filter(Boolean);
+}
+
 async function loadProjects() {
   const grid = document.getElementById('projectsGrid');
   try {
     const res = await fetch('projects.json?t=' + Date.now());
     if (!res.ok) throw new Error('no projects.json');
-    const projects = await res.json();
-    if (!projects.length) {
+    PROJECTS = await res.json();
+    if (!PROJECTS.length) {
+      grid.classList.add('is-empty');
       grid.innerHTML = `<div class="projects-empty"><strong>No projects yet</strong><span>send the first one through the Telegram bot</span></div>`;
       return;
     }
-    grid.innerHTML = projects.map((p, i) => `
-      <div class="project-card">
+    grid.classList.remove('is-empty');
+    grid.innerHTML = PROJECTS.map((p, i) => {
+      const imgs = imagesOf(p);
+      const live = safeUrl(p.link || p.url);
+      return `
+      <div class="project-card" data-i="${i}" role="button" tabindex="0" aria-label="Open ${escapeHtml(p.title)}">
         <div class="project-img-wrap">
-          ${p.image ? `<img src="${p.image}" alt="${escapeHtml(p.title)}" loading="lazy" />` : `<div class="project-img-placeholder">no image</div>`}
+          ${imgs.length ? `<img src="${escapeHtml(imgs[0])}" alt="${escapeHtml(p.title)}" loading="lazy" />` : `<div class="project-img-placeholder">no image</div>`}
           <div class="project-num-badge">${String(i+1).padStart(2,'0')}</div>
-          ${p.date ? `<div class="project-date">${p.date}</div>` : ''}
+          ${p.date ? `<div class="project-date">${escapeHtml(p.date)}</div>` : ''}
+          ${live ? `<div class="project-live-badge">live ↗</div>` : ''}
         </div>
         <div class="project-body">
           <div class="project-title">${escapeHtml(p.title)}</div>
@@ -1022,17 +1178,114 @@ async function loadProjects() {
           <div class="project-tags">
             ${(p.tags || []).map(t => `<span class="project-tag">${escapeHtml(t)}</span>`).join('')}
           </div>
+          <div class="project-more">view ${imgs.length > 1 ? imgs.length + ' photos' : 'details'} →</div>
         </div>
-      </div>
-    `).join('');
+      </div>`;
+    }).join('');
     attachCursorHover();
+    syncRailHint();
   } catch (e) {
+    grid.classList.add('is-empty');
     grid.innerHTML = `<div class="projects-empty"><strong>No projects yet</strong><span>create a projects.json file, or use the Telegram bot</span></div>`;
   }
 }
-function escapeHtml(s) {
-  return String(s || '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+function syncRailHint() {
+  const rail = document.getElementById('projectsGrid');
+  const hint = document.querySelector('.rail-hint');
+  if (hint) hint.classList.toggle('hidden', rail.scrollWidth <= rail.clientWidth + 4);
 }
+window.addEventListener('resize', syncRailHint);
+
+/* DRAG TO SCROLL THE RAIL */
+(function () {
+  const rail = document.getElementById('projectsGrid');
+  let down = false, startX = 0, startLeft = 0, moved = 0;
+  rail.addEventListener('pointerdown', e => {
+    if (e.pointerType !== 'mouse') return;   // touch/trackpad already pan natively
+    down = true; moved = 0;
+    startX = e.clientX; startLeft = rail.scrollLeft;
+  });
+  rail.addEventListener('pointermove', e => {
+    if (!down) return;
+    const dx = e.clientX - startX;
+    moved = Math.max(moved, Math.abs(dx));
+    if (moved > 5) rail.classList.add('dragging');
+    rail.scrollLeft = startLeft - dx;
+  });
+  const end = () => { down = false; rail.classList.remove('dragging'); };
+  rail.addEventListener('pointerup', end);
+  rail.addEventListener('pointerleave', end);
+  rail.addEventListener('pointercancel', end);
+
+  rail.addEventListener('click', e => {
+    if (moved > 5) return;                   // that was a drag, not a click
+    const card = e.target.closest('.project-card');
+    if (card) openProject(+card.dataset.i);
+  });
+  rail.addEventListener('keydown', e => {
+    if (e.key !== 'Enter' && e.key !== ' ') return;
+    const card = e.target.closest('.project-card');
+    if (card) { e.preventDefault(); openProject(+card.dataset.i); }
+  });
+})();
+
+/* PROJECT MODAL */
+const pm = document.getElementById('pmodal');
+
+function showShot(src, idx) {
+  document.getElementById('pmStage').innerHTML =
+    `<img src="${escapeHtml(src)}" alt="" />`;
+  document.querySelectorAll('#pmThumbs img').forEach((t, i) =>
+    t.classList.toggle('active', i === idx));
+}
+
+function openProject(i) {
+  const p = PROJECTS[i];
+  if (!p) return;
+  const imgs = imagesOf(p);
+  const live = safeUrl(p.link || p.url);
+
+  const thumbs = document.getElementById('pmThumbs');
+  thumbs.innerHTML = imgs.length > 1
+    ? imgs.map((src, n) => `<img src="${escapeHtml(src)}" alt="" data-n="${n}" />`).join('')
+    : '';
+  thumbs.style.display = imgs.length > 1 ? 'flex' : 'none';
+
+  document.getElementById('pmStage').innerHTML =
+    imgs.length ? '' : `<div class="project-img-placeholder" style="height:240px">no image</div>`;
+  if (imgs.length) showShot(imgs[0], 0);
+
+  document.getElementById('pmTitle').textContent = p.title || 'untitled';
+  document.getElementById('pmMeta').textContent =
+    [p.date, imgs.length > 1 ? imgs.length + ' photos' : null].filter(Boolean).join(' · ');
+  document.getElementById('pmDesc').textContent = p.description || '';
+  document.getElementById('pmTags').innerHTML =
+    (p.tags || []).map(t => `<span class="project-tag">${escapeHtml(t)}</span>`).join('');
+  document.getElementById('pmActions').innerHTML =
+    live ? `<a class="btn-live" href="${escapeHtml(live)}" target="_blank" rel="noopener">View live site ↗</a>` : '';
+
+  pm.classList.add('open');
+  document.body.classList.add('modal-open');
+  document.getElementById('pmClose').focus();
+}
+
+function closeProject() {
+  pm.classList.remove('open');
+  document.body.classList.remove('modal-open');
+  document.getElementById('pmStage').innerHTML = '';
+}
+
+document.getElementById('pmClose').addEventListener('click', closeProject);
+pm.addEventListener('click', e => { if (e.target === pm) closeProject(); });
+document.getElementById('pmThumbs').addEventListener('click', e => {
+  const t = e.target.closest('img');
+  if (t) showShot(t.getAttribute('src'), +t.dataset.n);
+});
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape' && pm.classList.contains('open')) closeProject();
+});
+
 loadProjects();
 </script>
 

@@ -308,29 +308,47 @@
     background: rgba(0, 255, 194, 0.05);
   }
 
+  .rail-head {
+    display: flex; align-items: center; gap: 1.2rem;
+    margin-bottom: 1.4rem;
+  }
   .rail-hint {
-    display: flex; align-items: center; gap: 0.8rem;
+    display: flex; align-items: center; gap: 0.8rem; flex: 1;
     font-size: 0.62rem; text-transform: uppercase; letter-spacing: 0.2em;
-    color: var(--ink-dim); margin-bottom: 1.4rem;
+    color: var(--ink-dim);
   }
   .rail-hint::after { content: ''; flex: 1; height: 1px; background: var(--line); }
   .rail-hint.hidden { visibility: hidden; }
+  .rail-nav { display: flex; gap: 0.5rem; flex: none; }
+  .rail-nav.hidden { display: none; }
+  .rail-btn {
+    width: 40px; height: 40px;
+    display: flex; align-items: center; justify-content: center;
+    background: transparent;
+    border: 1px solid var(--line-strong);
+    color: var(--ink);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 1rem; line-height: 1;
+    border-radius: 50%;
+    transition: border-color 0.3s, color 0.3s, opacity 0.3s;
+  }
+  .rail-btn:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); }
+  .rail-btn:disabled { opacity: 0.25; }
 
   /* two rows, scrolls sideways */
   .projects-grid {
     display: grid;
     grid-auto-flow: column;
     grid-template-rows: repeat(2, auto);
-    grid-auto-columns: 340px;
+    align-items: start;
+    grid-auto-columns: 380px;
     gap: 2rem;
     overflow-x: auto;
     overscroll-behavior-x: contain;
-    scroll-snap-type: x proximity;
     padding-bottom: 1.6rem;
     scrollbar-width: thin;
     scrollbar-color: var(--accent) var(--line);
   }
-  .projects-grid.dragging { scroll-snap-type: none; }
   .projects-grid.dragging .project-card { pointer-events: none; }
   .projects-grid::-webkit-scrollbar { height: 6px; }
   .projects-grid::-webkit-scrollbar-track { background: var(--line); }
@@ -339,7 +357,6 @@
   .project-card {
     background: rgba(17, 19, 26, 0.6);
     border: 1px solid var(--line);
-    scroll-snap-align: start;
     display: flex;
     flex-direction: column;
     overflow: hidden;
@@ -354,7 +371,7 @@
   }
   .project-img-wrap {
     position: relative;
-    aspect-ratio: 16 / 10;
+    aspect-ratio: 4 / 3;
     overflow: hidden;
     background: var(--bg-2);
   }
@@ -391,7 +408,7 @@
     backdrop-filter: blur(8px);
     border: 1px solid var(--line-strong);
   }
-  .project-body { padding: 1.8rem; flex: 1; display: flex; flex-direction: column; }
+  .project-body { padding: 1.8rem; }
   .project-title {
     font-family: 'Anton', sans-serif;
     font-size: 1.6rem;
@@ -418,7 +435,6 @@
     -webkit-box-orient: vertical;
     overflow: hidden;
   }
-  .project-tags { margin-top: auto; }
   .project-live-badge {
     position: absolute; bottom: 1rem; right: 1rem;
     font-family: 'JetBrains Mono', monospace;
@@ -432,10 +448,11 @@
   }
   .project-more {
     font-size: 0.6rem; text-transform: uppercase; letter-spacing: 0.2em;
-    color: var(--accent); opacity: 0; margin-top: 1rem;
-    transition: opacity 0.3s;
+    color: var(--accent);
+    max-height: 0; opacity: 0; overflow: hidden;
+    transition: max-height 0.35s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 0.3s, margin-top 0.35s;
   }
-  .project-card:hover .project-more { opacity: 1; }
+  .project-card:hover .project-more { max-height: 2rem; opacity: 1; margin-top: 1rem; }
   .project-tags { display: flex; flex-wrap: wrap; gap: 0.4rem; }
   .project-tag {
     font-size: 0.65rem;
@@ -480,11 +497,19 @@
     transform: translateY(24px) scale(0.985);
     transition: transform 0.45s cubic-bezier(0.2, 0.8, 0.2, 1);
     position: relative;
-    width: min(960px, 100%);
+    width: min(1100px, 100%);
     max-height: 88vh;
     overflow-y: auto;
     background: var(--bg-2);
     border: 1px solid var(--line-strong);
+  }
+  @media (min-width: 900px) {
+    .pmodal-box { display: grid; grid-template-columns: 1.2fr 1fr; overflow: hidden; }
+    .pmodal-media { display: flex; flex-direction: column; min-width: 0; }
+    .pmodal-stage { flex: 1; display: flex; align-items: center; }
+    .pmodal-stage img { max-height: 88vh; }
+    .pmodal-body { overflow-y: auto; max-height: 88vh; }
+    .pmodal-thumbs { border-top: 1px solid var(--line); border-right: 1px solid var(--line); }
   }
   .pmodal-close {
     position: absolute; top: 0.9rem; right: 0.9rem; z-index: 3;
@@ -657,6 +682,7 @@
     .stat { padding: 1.3rem; }
     .stat-num { font-size: 2.5rem; }
     .projects-grid { grid-auto-columns: 80vw; gap: 1.2rem; }
+    .rail-nav { display: none; }
     .rail-hint { font-size: 0.56rem; }
     .pmodal { padding: 0; }
     .pmodal-box { max-height: 100vh; height: 100%; border: none; }
@@ -695,7 +721,6 @@
   <ul class="nav-links">
     <li><a href="#about">About</a></li>
     <li><a href="#work">Work</a></li>
-    <li><a href="#awards">Awards</a></li>
     <li><a href="#contact">Contact</a></li>
   </ul>
 </nav>
@@ -814,38 +839,18 @@
     <div class="section-tag reveal">02 — Work</div>
     <h2 class="section-title reveal">stuff I've <span class="italic">actually built.</span></h2>
 
-    <div class="rail-hint reveal">drag or scroll sideways →</div>
+    <div class="rail-head reveal">
+      <div class="rail-hint">drag, scroll or use the arrows →</div>
+      <div class="rail-nav">
+        <button class="rail-btn" id="railPrev" aria-label="Previous projects">&lsaquo;</button>
+        <button class="rail-btn" id="railNext" aria-label="Next projects">&rsaquo;</button>
+      </div>
+    </div>
 
     <div class="projects-grid reveal" id="projectsGrid">
       <div class="projects-empty">
         <strong>Loading projects...</strong>
         <span>(if this stays, projects.json isn't loading yet)</span>
-      </div>
-    </div>
-  </section>
-
-  <section id="awards" class="awards">
-    <div class="section-tag reveal">03 — Trophy shelf</div>
-    <h2 class="section-title reveal">things I <span class="italic">won.</span></h2>
-
-    <div class="awards-grid">
-      <div class="award reveal">
-        <span class="award-icon">◆</span>
-        <div class="award-year">2024</div>
-        <div class="award-title">National Engineering Cup</div>
-        <div class="award-desc">1st place — Autonomous Systems category</div>
-      </div>
-      <div class="award reveal">
-        <span class="award-icon">▲</span>
-        <div class="award-year">2024</div>
-        <div class="award-title">Hackathon — 72hr build</div>
-        <div class="award-desc">Best hardware hack, no sleep involved</div>
-      </div>
-      <div class="award reveal">
-        <span class="award-icon">●</span>
-        <div class="award-year">2023</div>
-        <div class="award-title">Innovation Challenge</div>
-        <div class="award-desc">Gold medal — IoT solutions track</div>
       </div>
     </div>
   </section>
@@ -886,8 +891,10 @@
 <div class="pmodal" id="pmodal" role="dialog" aria-modal="true" aria-labelledby="pmTitle">
   <div class="pmodal-box">
     <button class="pmodal-close" id="pmClose" aria-label="Close">✕</button>
-    <div class="pmodal-stage" id="pmStage"></div>
-    <div class="pmodal-thumbs" id="pmThumbs"></div>
+    <div class="pmodal-media">
+      <div class="pmodal-stage" id="pmStage"></div>
+      <div class="pmodal-thumbs" id="pmThumbs"></div>
+    </div>
     <div class="pmodal-body">
       <div class="pmodal-title" id="pmTitle"></div>
       <div class="pmodal-meta" id="pmMeta"></div>
@@ -1191,19 +1198,38 @@ async function loadProjects() {
       </div>`;
     }).join('');
     attachCursorHover();
-    syncRailHint();
+    syncRail();
   } catch (e) {
     grid.classList.add('is-empty');
     grid.innerHTML = `<div class="projects-empty"><strong>No projects yet</strong><span>create a projects.json file, or use the Telegram bot</span></div>`;
   }
 }
 
-function syncRailHint() {
+function syncRail() {
   const rail = document.getElementById('projectsGrid');
-  const hint = document.querySelector('.rail-hint');
-  if (hint) hint.classList.toggle('hidden', rail.scrollWidth <= rail.clientWidth + 4);
+  // a few px of slack isn't worth showing an arrow for
+  const scrollable = rail.scrollWidth > rail.clientWidth + 60;
+  const max = rail.scrollWidth - rail.clientWidth;
+  document.querySelector('.rail-hint').classList.toggle('hidden', !scrollable);
+  document.querySelector('.rail-nav').classList.toggle('hidden', !scrollable);
+  document.getElementById('railPrev').disabled = rail.scrollLeft <= 1;
+  document.getElementById('railNext').disabled = rail.scrollLeft >= max - 1;
 }
-window.addEventListener('resize', syncRailHint);
+window.addEventListener('resize', syncRail);
+
+(function () {
+  const rail = document.getElementById('projectsGrid');
+  // one card plus the gap, read off the real card so it survives a css change
+  const step = () => {
+    const card = rail.querySelector('.project-card');
+    return card ? card.getBoundingClientRect().width + 32 : 380;
+  };
+  document.getElementById('railPrev').addEventListener('click',
+    () => rail.scrollBy({ left: -step(), behavior: 'smooth' }));
+  document.getElementById('railNext').addEventListener('click',
+    () => rail.scrollBy({ left: step(), behavior: 'smooth' }));
+  rail.addEventListener('scroll', syncRail, { passive: true });
+})();
 
 /* DRAG TO SCROLL THE RAIL */
 (function () {

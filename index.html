@@ -465,14 +465,20 @@
   /* project detail modal */
   .pmodal {
     position: fixed; inset: 0; z-index: 500;
-    display: none; align-items: center; justify-content: center;
+    display: flex; align-items: center; justify-content: center;
     padding: 2rem;
     background: rgba(5, 6, 9, 0.9);
     backdrop-filter: blur(10px);
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.35s cubic-bezier(0.2, 0.8, 0.2, 1), visibility 0.35s;
   }
-  .pmodal.open { display: flex; }
+  .pmodal.open { opacity: 1; visibility: visible; }
+  .pmodal.open .pmodal-box { transform: none; }
   body.modal-open { overflow: hidden; }
   .pmodal-box {
+    transform: translateY(24px) scale(0.985);
+    transition: transform 0.45s cubic-bezier(0.2, 0.8, 0.2, 1);
     position: relative;
     width: min(960px, 100%);
     max-height: 88vh;
@@ -726,8 +732,9 @@
     </h2>
 
     <p class="hero-tagline">
-      I'm 20. No CS degree — never started one. Just <strong>years of breaking things and figuring out why</strong>.
-      I write firmware at 2am and <span class="scribble">make things that work</span>.
+      I'm 20. No CS degree — never started one either. What I have is <strong>years of breaking stuff
+      and figuring out why</strong>. I write firmware at 2am, and <em>make things</em>
+      that <span class="scribble">actually work</span>.
     </p>
 
     <div class="scroll-indicator">scroll ↓</div>
@@ -740,17 +747,18 @@
     <div class="about-grid">
       <div class="about-text reveal">
         <p>
-          I'm <strong>Yakob</strong>, 20, a software and hardware engineer in Addis Ababa.
-          Started frying components at 12 and never stopped. No degree, not waiting for one.
+          I started messing with electronics at 12 and never stopped. I'm <strong>Yakob</strong> —
+          a software and hardware engineer who doesn't have a degree and isn't waiting for one.
         </p>
         <p>
-          I work both ends of the stack — firmware on ESP32, PIC and Arduino, PCB layout in KiCad,
-          React and Node on top, Python to glue it together. Control systems, ERP dashboards,
-          websites, custom hardware. <em>Different syntax, same logic.</em>
+          I work both sides of the stack. Firmware on ESP32, PIC and Arduino. PCB layouts in KiCad.
+          React frontends, Node.js services, Python scripts. To me <em>it's all the same thing</em> —
+          different syntax, same logic.
         </p>
         <p>
-          <strong>What I provide:</strong> projects on request. You describe the machine or the
-          system — I deliver it <strong>working</strong>. That's the whole job.
+          I build when someone asks me to, out of <strong>Ethiopia</strong> — projects on request.
+          What I really do is <em>give life to machines</em>. You describe the system, I deliver it —
+          and the part I'm here for is the moment it just <strong>works</strong>.
         </p>
         <p class="signature">— Yakob</p>
         <p class="note">currently: Addis Ababa, drinking too much coffee</p>
@@ -1218,6 +1226,20 @@ window.addEventListener('resize', syncRailHint);
   rail.addEventListener('pointerleave', end);
   rail.addEventListener('pointercancel', end);
 
+  // a plain mouse has no sideways wheel, so map vertical onto the rail — but only
+  // while the rail can still move that way, so the page never feels stuck
+  rail.addEventListener('wheel', e => {
+    if (e.deltaX) return;
+    const max = rail.scrollWidth - rail.clientWidth;
+    if (max <= 0) return;
+    // only hand the wheel back to the page once the rail has nowhere left to go,
+    // otherwise one big tick past the end would skip the rail entirely
+    if (e.deltaY > 0 && rail.scrollLeft >= max - 1) return;
+    if (e.deltaY < 0 && rail.scrollLeft <= 0) return;
+    e.preventDefault();
+    rail.scrollLeft = Math.min(max, Math.max(0, rail.scrollLeft + e.deltaY));
+  }, { passive: false });
+
   rail.addEventListener('click', e => {
     if (moved > 5) return;                   // that was a drag, not a click
     const card = e.target.closest('.project-card');
@@ -1271,9 +1293,8 @@ function openProject(i) {
 }
 
 function closeProject() {
-  pm.classList.remove('open');
+  pm.classList.remove('open');            // the image stays put while it fades out
   document.body.classList.remove('modal-open');
-  document.getElementById('pmStage').innerHTML = '';
 }
 
 document.getElementById('pmClose').addEventListener('click', closeProject);
